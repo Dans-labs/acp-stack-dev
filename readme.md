@@ -33,6 +33,10 @@ git clone --recurse-submodules git@github.com:Dans-labs/acp-stack-dev.git acp-de
 cd acp-dev
 cp .env.example .env.development
 # edit .env.development: set DB_USER, DB_PASSWORD, DB_ENCRYPTION_KEY, ...
+# Also, in every submodule, create and edit a conf/.secrets.toml file
+cp ./aca/conf/.secrets.toml.sample ./aca/conf/.secrets.toml
+cp ./acp/conf/.secrets.toml.sample ./acp/conf/.secrets.toml
+cp ./mts/conf/.secrets.toml.sample ./mts/conf/.secrets.toml
 docker compose --env-file .env.development up --build
 ```
 
@@ -62,7 +66,7 @@ Worker logs: `docker compose logs -f acp-worker`
 ## Configuration notes
 
 - Containers reach each other by service name. `localhost` inside a container is the container itself, so URLs must use `aca`, `redis`, `db`, etc.
-- Env vars that matter, set in `compose.yaml` / `.env.development`:
+- Env vars that matter, set in `compose.yaml` / `.env.development` or in the respective subrepo's `conf/.secrets.toml`:
   - `ASSISTANT_CONFIG_URL=http://aca:2810`
   - `REDIS_URL=redis://redis:6379/0`
   - `DB_*` (host `db`, port 5432)
