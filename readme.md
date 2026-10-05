@@ -29,7 +29,7 @@ acp-dev/
 ## Setup
 
 ```bash
-git clone --recurse-submodules <this-repo-url> acp-dev
+git clone --recurse-submodules git@github.com:Dans-labs/acp-stack-dev.git acp-dev
 cd acp-dev
 cp .env.example .env.development
 # edit .env.development: set DB_USER, DB_PASSWORD, DB_ENCRYPTION_KEY, ...
