@@ -1,0 +1,9 @@
+[submodule "acp"]
+	path = acp
+	url = git@github.com:Dans-labs/automated-curation-platform.git
+[submodule "aca"]
+	path = aca
+	url = git@github.com:Dans-labs/acp-config-assistant.git
+[submodule "mts"]
+	path = mts
+	url = git@github.com:Dans-labs/metadata-transformation-service.git
