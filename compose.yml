@@ -1,0 +1,119 @@
+x-python-service: &python-service
+  tty: true
+  env_file: .env.development
+  environment: &db-env
+    DB_DIALECT: postgresql+psycopg2
+    DB_USER: ${DB_USER}
+    DB_PASSWORD: ${DB_PASSWORD}
+    DB_HOST: db
+    DB_PORT: 5432
+    DB_NAME: ${DB_NAME:-acp}
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+
+services:
+  acp:
+    <<: *python-service
+    build:
+      context: ./acp
+      dockerfile: ../Dockerfile.dev
+    command: watchfiles --filter python "python -m src.main" src
+    ports:
+      - "10124:10124"
+    volumes:
+      - ./acp:/app
+    environment:
+      <<: *db-env
+      APP_NAME: "Automated Curation Platform"
+      ASSISTANT_CONFIG_URL: http://aca:2810
+      REDIS_URL: redis://redis:6379/0
+    restart: on-failure
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      aca:
+        condition: service_started
+
+  acp-worker:
+    <<: *python-service
+    build:
+      context: ./acp
+      dockerfile: ../Dockerfile.dev
+    working_dir: /app
+    command: python /worker_dev.py
+    volumes:
+      - ./acp:/app
+      - ./worker_dev.py:/worker_dev.py:ro
+    environment:
+      <<: *db-env
+      PYTHONPATH: /app:/app/src
+      ASSISTANT_CONFIG_URL: http://aca:2810
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      aca:
+        condition: service_started
+
+  aca:
+    <<: *python-service
+    build:
+      context: ./aca
+      dockerfile: ../Dockerfile.dev
+    command: watchfiles --filter python "python -m src.main" src
+    ports:
+      - "2810:2810"
+    volumes:
+      - ./aca:/app
+    environment:
+      <<: *db-env
+      APP_NAME: "Repository Assistant Service"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:2810/list-apps')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  mts:
+    <<: *python-service
+    build:
+      context: ./mts
+      dockerfile: ../Dockerfile.dev
+    command: watchfiles --filter python "python -m src.main" src
+    volumes:
+      - ./mts:/app
+    environment:
+      <<: *db-env
+      APP_NAME: "Metadata Transformation Service"
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-acp}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME:-acp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
