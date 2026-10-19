@@ -42,12 +42,7 @@ docker compose --env-file .env.development up --build
 
 If you cloned without `--recurse-submodules`, run `git submodule update --init`.
 
-Generate a valid `DB_ENCRYPTION_KEY` (Fernet key) with:
-
-```bash
-docker compose --env-file .env.development run --rm acp \
-  python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
-```
+Generate a valid 16 bytes long `DB_ENCRYPTION_KEY` with `openssl rand -hex 16` and enter this key into `./acp/conf/.secrets.toml`
 
 ## Important: the worker must be running
 
